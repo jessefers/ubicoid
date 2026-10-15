@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="UbicoID: acesso restrito ao pacote de revisão.">
+<title>UbicoID · acesso restrito</title>
+<link rel="icon" href="../portal/icons/simbolo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../gate.css">
+</head>
+<body>
+<form id="gate" class="gate" autocomplete="on" hidden data-wait="Verificando… · Verificando…" data-go="Entrar" data-bad="Usuário ou senha incorretos. · Usuario o contraseña incorrectos." data-net="Não foi possível carregar. Tente de novo. · No se pudo cargar. Intentá de nuevo.">
+  <div class="brand"><svg viewBox="0 0 120 120" aria-hidden="true"><rect x="6" y="6" width="108" height="108" rx="26" fill="#E8590C"/><path d="M60 22c-17 0-30 13-30 30 0 22 30 48 30 48s30-26 30-48c0-17-13-30-30-30z" fill="#FFFFFF"/><rect x="44" y="42" width="32" height="20" rx="5" fill="#E8590C"/><rect x="49" y="47" width="4" height="10" rx="1" fill="#FFFFFF"/><rect x="56" y="47" width="3" height="10" rx="1" fill="#FFFFFF"/><rect x="62" y="47" width="5" height="10" rx="1" fill="#FFFFFF"/><rect x="70" y="47" width="2" height="10" rx="1" fill="#FFFFFF"/></svg><div><b>Ubico<span>ID</span></b><small lang="es-PY">¡Acá ko estoy!</small></div></div>
+  <h1>Acesso restrito <span lang="es">· Acceso restringido</span></h1>
+  <p>Informe o usuário e a senha recebidos. <span lang="es">Ingresá el usuario y la contraseña que recibiste.</span></p>
+  <label>Usuário · Usuario<input id="u" name="username" autocomplete="username" required></label>
+  <label>Senha · Contraseña<input id="p" name="password" type="password" autocomplete="current-password" required></label>
+  <div class="err" id="err" role="alert"></div>
+  <button type="submit" id="go">Entrar</button>
+  <p class="foot">Conteúdo cifrado. Sem a credencial, nada é legível.</p>
+</form>
+<noscript><p style="text-align:center">Ative o JavaScript para entrar. · Activá JavaScript para ingresar.</p></noscript>
+<script src="../gate.js" data-root="../" data-page="terminos"></script>
+</body>
+</html>
