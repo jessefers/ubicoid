@@ -141,3 +141,25 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .compartidos li.cab{border-top:0;padding-bottom:0}
 .compartidos li div{display:grid;min-width:0}
 .compartidos .link{white-space:nowrap}
+
+/* confiança do endereço, leitura do código e campo na loja */
+.dots{display:inline-flex;gap:4px;vertical-align:middle;margin-right:6px}
+.dots b{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}
+.dots b.on{background:var(--accent)}
+.anatomia h2,.usoloja h2{margin-top:0}
+.partes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.partes li{display:grid;gap:2px;align-content:start;padding:12px 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.partes .v{font-size:20px;font-weight:600;color:var(--accent);letter-spacing:.04em}
+.partes b{font-size:13px}
+.partes small{color:var(--ink-3);font-size:12px;line-height:1.35}
+@media (max-width:480px){.partes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.campo-ej{display:grid;gap:6px}
+.campo-ej small{color:var(--ink-3)}
+.campo-ej .falso{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 14px;border:1.5px dashed var(--field);border-radius:12px;background:var(--bg)}
+.campo-ej .falso span:first-child{color:var(--ink-3);font-size:14px}
+.campo-ej .falso .mono{color:var(--accent);font-size:16px;letter-spacing:.04em}
+
+/* fotos de campanha (imagens ilustrativas geradas por IA) misturadas ao fundo */
+.foto-hero{height:190px;margin:-8px -16px 4px;border-radius:0 0 28px 28px;background:linear-gradient(180deg,rgba(10,13,19,.15),var(--bg) 96%),url(img/foto-cliente.jpg) center 28%/cover;opacity:.9;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+.usoloja{position:relative;overflow:hidden;isolation:isolate}
+.usoloja::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,var(--surface) 38%,rgba(18,22,33,.55)),url(img/foto-loja.jpg) right center/cover;opacity:.9}

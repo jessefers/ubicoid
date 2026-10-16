@@ -66,6 +66,17 @@
       error: 'Algo salió mal. Probá de nuevo.', sinConexion: 'Sin conexión. Revisá tu internet.',
       terminos: 'Términos y privacidad', slogan: 'UbicoID: ¡Acá ko estoy!',
       tiendaTitulo: 'Enviar a una tienda',
+      codigoComoLeer: 'Cómo leer tu código',
+      codigoPartes: ['UID', 'Ciudad', 'Región', 'Número'],
+      codigoParteAyuda: (z, r) => [`Prefijo fijo de UbicoID`, `${z}`, `${r}`, 'Único en tu ciudad y región'],
+      codigoUsoTitulo: 'Pegalo en el campo «UbicoID» de la tienda',
+      codigoUsoLead: 'Las tiendas que ya tienen el campo UbicoID en su registro o en el pago lo piden como dato adicional de la dirección. Copiá el código y pegalo ahí; ellas traen tu punto del mapa.',
+      codigoUsoEjemplo: 'Ejemplo del campo en la tienda',
+      confianzaNiveles: ['Nuevo', 'En verificación', 'Verificado'],
+      confianzaAyuda: 'Sube con cada entrega confirmada con tu PIN. Nunca se cambia a mano y no depende de quién sos, solo del punto.',
+      regionAnillos: ['centro', 'barrios', 'afueras'],
+      regionSectores: ['norte', 'noreste', 'este', 'sureste', 'sur', 'suroeste', 'oeste', 'noroeste'],
+      regionTexto: (anillo, sector) => `${anillo}, lado ${sector}`,
       tiendaLead: 'Agregá tu UbicoID al registro de la tienda donde comprás. La tienda recibe el código y tu punto para entregarte; nunca tu nombre ni tu número.',
       tiendaBuscar: 'Buscar tienda', tiendaNinguna: 'No encontramos esa tienda en UbicoID.',
       tiendaRef: 'N° de pedido o de cliente en la tienda', tiendaRefAyuda: 'Ayuda a la tienda a reconocer tu compra.',
@@ -146,6 +157,17 @@
       error: 'Algo deu errado. Tente de novo.', sinConexion: 'Sem conexão. Verifique sua internet.',
       terminos: 'Termos e privacidade', slogan: 'UbicoID: ¡Acá ko estoy!',
       tiendaTitulo: 'Enviar para uma loja',
+      codigoComoLeer: 'Como ler seu código',
+      codigoPartes: ['UID', 'Cidade', 'Região', 'Número'],
+      codigoParteAyuda: (z, r) => [`Prefixo fixo da UbicoID`, `${z}`, `${r}`, 'Único na sua cidade e região'],
+      codigoUsoTitulo: 'Cole no campo «UbicoID» da loja',
+      codigoUsoLead: 'As lojas que já têm o campo UbicoID no cadastro ou no pagamento pedem o código como dado adicional do endereço. Copie o código e cole ali; elas buscam o seu ponto no mapa.',
+      codigoUsoEjemplo: 'Exemplo do campo na loja',
+      confianzaNiveles: ['Novo', 'Em verificação', 'Verificado'],
+      confianzaAyuda: 'Sobe a cada entrega confirmada com o seu PIN. Nunca é alterada à mão e não depende de quem você é, só do ponto.',
+      regionAnillos: ['centro', 'bairros', 'periferia'],
+      regionSectores: ['norte', 'nordeste', 'leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste'],
+      regionTexto: (anillo, sector) => `${anillo}, lado ${sector}`,
       tiendaLead: 'Adicione seu UbicoID ao cadastro da loja onde você compra. A loja recebe o código e o seu ponto para entregar; nunca seu nome nem seu número.',
       tiendaBuscar: 'Buscar loja', tiendaNinguna: 'Não encontramos essa loja no UbicoID.',
       tiendaRef: 'Nº do pedido ou de cliente na loja', tiendaRefAyuda: 'Ajuda a loja a reconhecer sua compra.',
@@ -260,10 +282,29 @@
 
   function nivelNome(n) { return t().nivel[n][0]; }
 
+  /* Código UbicoID: UID-CDEA1234 = prefixo + cidade (3 letras) + região (1 letra) + número (4 dígitos).
+     A região combina anel de distância ao centro da zona e setor da bússola (mesmas regras de src/zonas.ts). */
+  const REGIOES = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  function partesDoCodigo(id) {
+    const m = String(id).match(/^UID-([A-Z]{3})([A-HJ-NP-Z])(\d{4})$/);
+    return m ? { cidade: m[1], regiao: m[2], numero: m[3] } : null;
+  }
+  function regiaoTexto(letra) {
+    const i = REGIOES.indexOf(letra);
+    if (i < 0) return letra;
+    return t().regionTexto(t().regionAnillos[Math.floor(i / 8)], t().regionSectores[i % 8]);
+  }
+  function confiancaNivel(entregas) { return entregas >= 5 ? 2 : entregas >= 1 ? 1 : 0; }
+  function pontosConfianca(entregas) {
+    const n = Math.min(5, entregas);
+    return '<span class="dots" role="img" aria-label="' + esc(n + '/5') + '">' + [0, 1, 2, 3, 4].map((i) => '<b class="' + (i < n ? 'on' : '') + '"></b>').join('') + '</span>';
+  }
+
   /* ---------------- telas ---------------- */
 
   function telaEntrar() {
     view(`
+      <div class="foto-hero" aria-hidden="true"></div>
       <h1>${t().entrarTitulo}</h1>
       <p class="lead">${esc(t().entrarLead)}</p>
       <form class="card stack" id="f" novalidate>
@@ -508,10 +549,22 @@
           <a class="btn primary" href="${esc(wa)}" target="_blank" rel="noopener">${esc(t().compartir)}</a></div>
         ${u.exclusaoPendente ? `<p><span class="pill warn">${esc(t().exclusionPendiente)}</span></p>` : ''}
       </div>
+      ${(() => {
+        const p = partesDoCodigo(u.deliveryId);
+        if (!p) return '';
+        const ay = t().codigoParteAyuda(u.zona, regiaoTexto(p.regiao));
+        const val = ['UID', p.cidade, p.regiao, p.numero];
+        return `<section class="card anatomia" aria-labelledby="h-leer"><h2 id="h-leer">${esc(t().codigoComoLeer)}</h2>
+          <ol class="partes">${val.map((v, i) => `<li><span class="mono v">${esc(v)}</span><b>${esc(t().codigoPartes[i])}</b><small>${esc(ay[i])}</small></li>`).join('')}</ol></section>`;
+      })()}
+      <section class="card usoloja" aria-labelledby="h-uso"><h2 id="h-uso">${esc(t().codigoUsoTitulo)}</h2>
+        <p class="muted">${esc(t().codigoUsoLead)}</p>
+        <div class="campo-ej" aria-label="${esc(t().codigoUsoEjemplo)}"><small>${esc(t().codigoUsoEjemplo)}</small><div class="falso"><span>UbicoID</span><span class="mono">${esc(u.deliveryId)}</span></div></div>
+      </section>
       <h2>${esc(t().zona)}: ${esc(u.zona)}</h2>
       <div class="map small" id="map" aria-hidden="true"></div>
       <dl class="info card">
-        <dt>${esc(t().confianza)}</dt><dd>${esc(t().entregas(u.entregasConfirmadas))}</dd>
+        <dt>${esc(t().confianza)}</dt><dd>${pontosConfianca(u.entregasConfirmadas)} <b>${esc(t().confianzaNiveles[confiancaNivel(u.entregasConfirmadas)])}</b> · ${esc(t().entregas(u.entregasConfirmadas))}<br><small class="muted">${esc(t().confianzaAyuda)}</small></dd>
         <dt>${esc(t().visible)}</dt><dd>${esc(nivelNome(u.nivelConsentimento))}</dd>
         <dt>${esc(t().creadoEn)}</dt><dd>${esc(data)}</dd>
         ${u.unidade ? `<dt>${esc(t().unidad)}</dt><dd>${esc(u.unidade)}</dd>` : ''}

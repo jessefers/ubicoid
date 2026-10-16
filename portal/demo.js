@@ -36,8 +36,26 @@
     }
     return melhor && melhor.km <= 40 ? melhor : null;
   }
-  const ALFA = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const sufixo = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => ALFA[b % 32]).join('');
+  // Formato novo: UID-<CIDADE><REGIÃO><NÚMERO>, ex. UID-CDEA1234 (mesmas regras de src/idGenerator.ts e src/zonas.ts).
+  // Região = anel de distância ao centro da zona (até 3 km, 3 a 10 km, acima) x setor da bússola (N, NE, L, SE, S, SO, O, NO).
+  const REGIOES = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  function regiaoDaZona(cod, lat, lng) {
+    const z = ZONAS.find((x) => x[1] === cod);
+    if (!z) return 'A';
+    const rad = Math.PI / 180, zl = z[2], zg = z[3];
+    const a = Math.sin(((zl - lat) * rad) / 2) ** 2 + Math.cos(lat * rad) * Math.cos(zl * rad) * Math.sin(((zg - lng) * rad) / 2) ** 2;
+    const km = 6371 * 2 * Math.asin(Math.sqrt(a));
+    const anel = km < 3 ? 0 : km < 10 ? 1 : 2;
+    const dx = (lng - zg) * Math.cos(zl * rad), dy = lat - zl;
+    const rumo = km === 0 ? 0 : (Math.atan2(dx, dy) / rad + 360) % 360;
+    return REGIOES[anel * 8 + Math.floor(((rumo + 22.5) % 360) / 45)];
+  }
+  const numero4 = () => String(crypto.getRandomValues(new Uint32Array(1))[0] % 10000).padStart(4, '0');
+  function normalizarCodigo(entrada) {
+    const bruto = String(entrada || '').trim().toUpperCase();
+    const m = bruto.replace(/[^A-Z0-9]/g, '').match(/^UID([A-Z]{3})([A-HJ-NP-Z])(\d{4})$/);
+    return m ? `UID-${m[1]}${m[2]}${m[3]}` : bruto.replace(/\s+/g, '');
+  }
 
   function normalizarTelefone(e) {
     let d = String(e || '').replace(/[\s\-().]/g, '');
@@ -48,7 +66,7 @@
   }
 
   // ---------- armazenamento (localStorage, com plano B em memória) ----------
-  const CHAVE = 'ubicoid-demo-v2';
+  const CHAVE = 'ubicoid-demo-v3';
   let memoria = null;
   function ler() {
     if (memoria) return memoria;
@@ -156,7 +174,8 @@
       if (meus().length >= 10) return erro(429, 'Límite de 10 UbicoID por persona.');
       const z = zonaPorCoordenadas(corpo.lat, corpo.lng);
       if (!z) return erro(422, 'Fuera del área atendida.', 'FORA_DA_AREA');
-      const id = `UID-${z.cod}-${sufixo()}`;
+      const reg = regiaoDaZona(z.cod, corpo.lat, corpo.lng);
+      let id; do { id = `UID-${z.cod}${reg}${numero4()}`; } while (db.uids[id]);
       db.uids[id] = {
         deliveryId: id, dono: eu.telefone, apelido: String(corpo.apelido || 'Casa').trim(), zona: z.zona, lat: corpo.lat, lng: corpo.lng,
         referenciasAcesso: String(corpo.referenciasAcesso || '').trim(), unidade: corpo.unidade || null, nivelConsentimento: corpo.nivelConsentimento,
@@ -167,7 +186,7 @@
     if (caminho === '/lojas' && metodo === 'GET') return resp(200, LOJAS);
     const ml = caminho.match(/^\/uids\/([^/]+)\/lojas(?:\/([^/]+))?$/);
     if (ml) {
-      const u = db.uids[decodeURIComponent(ml[1])];
+      const u = db.uids[normalizarCodigo(decodeURIComponent(ml[1]))];
       if (!u || u.dono !== eu.telefone) return erro(404, 'UbicoID no encontrado en tu cuenta.');
       u.lojas = u.lojas || [];
       const ver = (c) => { const l = LOJAS.find((x) => x.id === c.lojaId) || { nome: '—', cidade: '' }; return { lojaId: c.lojaId, lojaNome: l.nome, lojaCidade: l.cidade, referenciaCliente: c.ref, compartilhadoEm: c.em, origem: 'CIDADAO' }; };
@@ -189,7 +208,7 @@
     }
     const m = caminho.match(/^\/uids\/([^/]+)(\/consentimiento|\/eliminacion)?$/);
     if (m) {
-      const u = db.uids[decodeURIComponent(m[1])];
+      const u = db.uids[normalizarCodigo(decodeURIComponent(m[1]))];
       if (!u || u.dono !== eu.telefone) return erro(404, 'UbicoID no encontrado en tu cuenta.');
       if (!m[2] && metodo === 'GET') return resp(200, publico(u));
       if (!m[2] && metodo === 'PATCH') {
