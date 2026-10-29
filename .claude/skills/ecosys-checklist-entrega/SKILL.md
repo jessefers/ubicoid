@@ -14,4 +14,6 @@ Execute os passos em ordem e relate o resultado de cada um em uma tabela (item, 
 5. **Branding.** Usar apenas a identidade do UbicoID (logos em `portal/sac/`, fontes Geist). Nao trazer identidade de outro projeto.
 6. **Registro.** Atualizar a data de base no `README.md` se o conteudo mudou e escrever mensagem de commit em portugues, descrevendo o que mudou para o revisor.
 
+Para os itens 3 e 4, quando houver alteracao de codigo ou de estilo, delegue a revisao aos agents `auditor-seguranca` e `revisor-contraste` e incorpore os achados na tabela.
+
 So declare "pronto para publicar" se todos os itens estiverem conformes; caso contrario, liste o que falta.
