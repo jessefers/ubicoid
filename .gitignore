@@ -1,0 +1,11 @@
+# ECOSYS: nada de segredo ou conteudo em claro no repositorio
+.env
+.env.*
+*.pem
+*.key
+*.pdf
+*.mp4
+*.mov
+*.docx
+*.xlsx
+.claude/settings.local.json
